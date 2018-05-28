@@ -10,6 +10,9 @@ from PIL import Image
 from io import BytesIO
 from time import sleep
 from copy import deepcopy
+from mss import mss
+
+
 
 
 token = '1234'
@@ -24,6 +27,7 @@ client = discord.Client()
 
 
 default_options = {
+    '-a': True,
     '-f': False,
     '-w': 1024,
     '-h': 768,
@@ -34,9 +38,10 @@ def configure_browser(options):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('headless')
     chrome_options.add_argument('no-sandbox')
-    driver = webdriver.Chrome(chrome_options=chrome_options)
-    driver.set_window_position(0, 0)
-    driver.set_window_size(options['-w'], options['-h'])
+    #driver = webdriver.Chrome(chrome_options=chrome_options)
+    #driver.set_window_position(0, 0)
+    #driver.set_window_size(options['-w'], options['-h'])
+    driver = webdriver.Chrome("C:/Users/flauer/Downloads/chromedriver_win32/chromedriver.exe")
     return driver
 
 
@@ -142,7 +147,7 @@ Command: !ss
             site = 'http://{}'.format(site)
 
         tmp = await client.send_message(
-            message.channel, 'Screenshotting <{}>...'.format(site))
+            message.channel, 'Screenshotting...'.format(site))
 
 
         rand_str = lambda n: ''.join(
@@ -152,13 +157,14 @@ Command: !ss
         filename = rand_str(5)
         png = '{}.{}'.format(filename, 'png')
         jpg = '{}.{}'.format(filename, 'jpg')
-        
-        driver = configure_browser(options)
-        try:
-            driver.get(site)
-            sleep(1)
 
+
+        try:
+            sleep(1)
             if options['-f']:
+                driver = configure_browser(options)
+                driver.get(site)
+                sleep(1)
                 print ('fullpage')
                 tmp = await client.edit_message(
                     tmp,
@@ -169,8 +175,20 @@ Command: !ss
 
                 # really need to find a better way to do all this.
                 screenshot.save(png)
+                driver.quit()
+            elif options['-a']:
+                with mss() as sct:
+                    sleep(3)
+                    for filename in sct.save():
+                        screenshot = filename
+                        convert_to_jpeg(screenshot, jpg)
+                        await client.send_file(message.channel, jpg)
             else:
+                driver = configure_browser(options)
+                driver.get(site)
+                sleep(1)
                 screenshot = driver.save_screenshot(png)
+                driver.quit()
 
             convert_to_jpeg(png, jpg)
 
@@ -186,7 +204,7 @@ Command: !ss
         except:
             await client.edit_message(
                 tmp,
-                'Failed! Could be a timeout, file too large or site is down')
+                '')
         try:
             os.remove(png)
         except OSError:
@@ -195,7 +213,6 @@ Command: !ss
             os.remove(jpg)
         except OSError:
             pass
-        driver.quit()
 
     elif processes > MAX_PROCESSES:
         await client.send_message(message.channel, 'Too many processes running, try again later.')
@@ -203,4 +220,4 @@ Command: !ss
     set_processes(message.content, processes - 1)
 
 
-client.run(token)
+client.run('NDUwNTk1MTE4MzkxNzU0NzUy.De1igA.zec-JQtaZ_DhE_H6iwM5losCyC0')

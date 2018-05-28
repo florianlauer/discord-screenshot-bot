@@ -4,3 +4,4 @@ discord.py==0.16.12
 Pillow==5.0.0
 selenium==3.8.1
 websockets==3.4
+mss==3.2.1
